@@ -12,7 +12,7 @@ const Login = ({ setToken, setUserId }) => {
         e.preventDefault();
         setError(''); // Reset error message
         try {
-            const response = await axios.post('http://172.16.17.8:5000/api/login', { reg_no: regNo, password });
+            const response = await axios.post('https://attedance-lc2b.vercel.app/api/login', { reg_no: regNo, password });
             const token = response.data.token;
             const userId = response.data.user_id; // Ensure this matches your API response structure
     

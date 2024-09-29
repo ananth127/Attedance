@@ -56,7 +56,7 @@ const Attendance = ({ token, userId }) => {
     const handleSubmit = async () => {
         try {
             const response = await axios.post(
-                'http://172.16.17.8:5000/api/attendance',
+                'https://attedance-lc2b.vercel.app/api/attendance',
                 { user_id: userId, ...location, status, reason, fingerprint },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

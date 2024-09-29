@@ -15,7 +15,7 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://172.16.17.8:5000/api/signup', {
+            const response = await axios.post('https://attedance-lc2b.vercel.app/api/signup', {
                 name,
                 reg_no: regNo,
                 dept,
