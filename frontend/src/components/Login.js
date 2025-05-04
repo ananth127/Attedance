@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import {publicApi} from './Axios';
 import { useNavigate } from 'react-router-dom';
 
 const Login = ({ setToken, setUserId }) => {
@@ -12,7 +12,7 @@ const Login = ({ setToken, setUserId }) => {
         e.preventDefault();
         setError(''); // Reset error message
         try {
-            const response = await axios.post('https://attedance-lc2b.vercel.app/api/login', { reg_no: regNo, password });
+            const response = await publicApi.post('/api/login', { reg_no: regNo, password });
             const token = response.data.token;
             const userId = response.data.user_id; // Ensure this matches your API response structure
     
