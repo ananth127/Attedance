@@ -37,7 +37,9 @@ const attendanceSchema = new mongoose.Schema({
     status: { type: String, enum: ['present', 'absent', 'on_duty'] },
     reason: String,
     fingerprint: String,
-    ipAddress: String,  // New field for IP address
+    ipAddress: String,
+    ipv6: String,
+    ipv4: String,// New field for IP address
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
@@ -46,6 +48,7 @@ const Attendance = mongoose.model('Attendance', attendanceSchema);
 // Signup
 app.post('/api/signup', async (req, res) => {
     const { name, reg_no, dept, section, year, phone_no, password } = req.body;
+    console.log("password",password);
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ name, reg_no, dept, section, year, phone_no, password: hashedPassword });
 
@@ -75,26 +78,59 @@ app.post('/api/login', async (req, res) => {
 // API endpoint to mark attendance
 app.post('/api/attendance', async (req, res) => {
     const { user_id, latitude, longitude, status, reason, fingerprint } = req.body;
-    const ipAddress = req.ip; // Get the user's IP address from the request
+    // Get IP from headers or connection
+    let rawIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
+
+    // If multiple IPs in x-forwarded-for, take the first one
+    if (rawIp && rawIp.includes(',')) {
+        rawIp = rawIp.split(',')[0].trim();
+    }
+
+    // Normalize IPv4 from IPv6-mapped format
+    const ipAddress = rawIp.includes('::ffff:') ? rawIp.split('::ffff:')[1] : rawIp;
+
+    // Identify IPv4 and IPv6 separately
+    const ipv4 = ipAddress.match(/^\d{1,3}(\.\d{1,3}){3}$/) ? ipAddress : null;
+    const ipv6 = ipAddress.includes(':') ? rawIp : null;
+
+    console.log(`IPv4: ${ipv4}, IPv6: ${ipv6}, Fingerprint: ${fingerprint}`);
+    console.log(fingerprint, " ", ipAddress);
 
     // Check for the last attendance marking within 30 minutes
     const lastAttendance = await Attendance.findOne({ user_id }).sort({ createdAt: -1 });
-    
-    if (lastAttendance && (new Date() - lastAttendance.createdAt < 30 )) {
+    if (lastAttendance && (new Date() - lastAttendance.createdAt < 30 * 60 * 1000)) {
         return res.status(400).json({ message: 'Attendance already marked within the last 30 minutes.' });
     }
 
-    // Check if attendance has already been marked for this user and IP address
-    const existingAttendance = await Attendance.findOne({ user_id, ipAddress });
-    if (existingAttendance) {
-        return res.status(400).json({ message: 'Attendance already marked from this IP address.' });
+    // Define start and end of the day
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Check if IP was used by another user today
+    const ipUsedByAnotherUser = await Attendance.findOne({
+        ipAddress,
+        user_id: { $ne: user_id },
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+    const fingerprintAnotheruser = await Attendance.findOne({
+        fingerprint,
+        user_id: { $ne: user_id },
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (ipUsedByAnotherUser || fingerprintAnotheruser) {
+        return res.status(400).json({ message: 'This IP address has already been used by another user today.' });
     }
 
+
     // Proceed to insert new attendance record
-    const attendance = new Attendance({ user_id, latitude, longitude, status, reason, fingerprint, ipAddress });
+    const attendance = new Attendance({ user_id, latitude, longitude, status, reason, fingerprint, ipAddress,ipv6,ipv4 });
     await attendance.save();
     res.status(200).json({ message: 'Attendance recorded successfully!', ipAddress });
 });
+
 
 // Proxy endpoint for reverse geocoding
 app.get('/api/reverse-geocode', async (req, res) => {
