@@ -2,13 +2,13 @@ import axios from 'axios';
 
 // Regular API instance (requires auth)
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'https://attedance-lc2b.vercel.app',
   timeout: 10000
 });
 
 // Public API instance (no auth required)
 export const publicApi = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'https://attedance-lc2b.vercel.app',
   timeout: 10000
 });
 
