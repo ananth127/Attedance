@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import {publicApi} from './Axios';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 const Attendance = ({ token, userId }) => {
@@ -44,7 +45,7 @@ const Attendance = ({ token, userId }) => {
     // Function to fetch the place name using the proxy
     const fetchPlaceName = async (latitude, longitude) => {
         try {
-            const response = await axios.get(`/api/reverse-geocode`, {
+            const response = await publicApi.get(`/api/reverse-geocode`, {
                 params: { latitude, longitude }
             });
             setPlaceName(response.data.display_name);
@@ -55,8 +56,8 @@ const Attendance = ({ token, userId }) => {
 
     const handleSubmit = async () => {
         try {
-            const response = await axios.post(
-                'https://attedance-lc2b.vercel.app/api/attendance',
+            const response = await publicApi.post(
+                '/api/attendance',
                 { user_id: userId, ...location, status, reason, fingerprint },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
