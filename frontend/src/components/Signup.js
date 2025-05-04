@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import {publicApi} from './Axios';
 
 const Signup = () => {
     const [name, setName] = useState('');
@@ -15,7 +15,7 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('https://attedance-lc2b.vercel.app/api/signup', {
+            const response = await publicApi.post('/api/signup', {
                 name,
                 reg_no: regNo,
                 dept,
